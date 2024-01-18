@@ -1,0 +1,171 @@
+
+      INTEGER LTBL
+      PARAMETER (LTBL=3000)
+
+      INTEGER MXITIME
+      PARAMETER(MXITIME=100000)
+
+      INTEGER NRCTN				! max number of chem reactions 
+      PARAMETER (NRCTN=700)
+
+      INTEGER NSP
+      PARAMETER (NSP=43)
+
+      INTEGER NST				! max number of elements = 10
+      PARAMETER (NST=10)
+
+      INTEGER NXSEC				! no. of rcn cross sections in the tables
+      PARAMETER (NXSEC=50)
+
+      INTEGER INDXN4S 
+      PARAMETER(INDXN4S = 1)
+  
+      INTEGER INDXO3P
+      PARAMETER(INDXO3P = 8)
+
+      INTEGER MXNTF				! length of TPMAX used in EQUIRO
+      PARAMETER (MXNTF = 200)
+
+      INTEGER MXSPE
+      PARAMETER(MXSPE = 46)
+
+      INTEGER LRW
+      PARAMETER(LRW = (MXSPE-1)*(MXSPE-1+17) + 250)
+
+      INTEGER NDET				! No. of Phdet runs.  defined in param
+      PARAMETER (NDET = 3)
+
+      INTEGER NDIS				! # of Ph dissoc
+      PARAMETER (NDIS = 21)
+
+      INTEGER NEXC				! no. of photodissociation reactions
+      PARAMETER (NEXC = 8)
+
+      INTEGER NIDIS				! No. of ion photodissociation reaxns
+      PARAMETER (NIDIS = 5)
+
+      INTEGER NION
+      PARAMETER (NION = 13)
+  
+      INTEGER INDXNO2			
+      PARAMETER (INDXNO2 = NION + NDET + NIDIS + 12)
+
+      INTEGER NMESH				! number of frequency groups for chemistry
+      PARAMETER (NMESH = 42)
+
+      INTEGER LENIW				! used in DDRIV, = nchm+50
+      INTEGER NCHM
+      INTEGER NSIG				! no. of photo cross sections
+      PARAMETER (NSIG  = NION + NDET + NIDIS + NDIS + NEXC)
+      PARAMETER (NCHM  = NSP-1)
+      PARAMETER (LENIW = NCHM+50)
+
+C -----------------------------------------------------------------
+
+      real*8 AR(NRCTN), BR(NRCTN), CR(NRCTN)	! rate expression, A(T/300)^B*exp(-c/T)	 
+      real*8 avgmw 
+	  
+      CHARACTER*6 BCDXSEC(NXSEC)
+ 
+      real*8 CHMPOTNRG(MXVRT)			! Chemical Potential energy	  		
+      real*8 CIJ(NSP,7)	
+      real*8 dsiemin, dsiemax, echmtot
+      real*8 eltfrac(4)	
+
+      CHARACTER*58 EQNSIN(NRCTN)
+      CHARACTER*6 EQSYM(NSP) 
+      real*8 GIJ(NSP,4)				! Number of atoms of each element per molecule
+      real*8 hnu3(nhv)				! hnu^3, used in delmu
+
+      integer iairstrt				! index for first air cell, when using debris
+      INTEGER ICAT(NRCTN)			! Index of reaction category
+      integer ichmend				! cell index to end chemistry loop	
+      INTEGER ICHEM				! Chemistry switch
+      integer ichmstrt				! Cell index to begin chemistry loop
+      INTEGER ICRTBL(LTBL)			! Diffchem array
+
+      INTEGER INDE				! electron species index
+      INTEGER INDH,    INDH2O,  INDH2O2,  INDH3OP, INDHNO2, INDHNO3, 
+     &        INDHO2,  INDM,    INDN,     INDN2,   INDN2A3, INDN2D,  
+     &        INDN2O,  INDN2O5, INDN2P,   INDN4P,  INDNH,   INDNO,  
+     &        INDNO2,  INDNO2M, INDNO3,   INDNOP,  INDNP,   INDO,  
+     &        INDO1D,  INDO1S,  INDO2,    INDO2DL, INDO2M,  INDO2P, 
+     &        INDO2SG, INDO3,   INDO3M,   INDO4P,  INDOH,   INDOHH3OP,
+     &        INDOM,   INDOP,   INDW2NOP, INDWNOP, INDWO2M, INDWO2P
+
+      INTEGER INDX1(NXSEC), INDX2(NXSEC)
+      INTEGER INDX3(NSP)
+      INTEGER INDXM(NRCTN)
+      integer iphrj(nxsec)
+
+      integer irmxprev	  
+      INTEGER ISTARTCHM
+      INTEGER ISTOCH(NST,NSP)		! # of atoms of given element in each species
+      integer itmxprev
+	  
+      INTEGER JCELL
+      INTEGER MFMAXC			! highest frequency band being used by chemistry
+
+      INTEGER NCHEM			! = NSPECI-1, = number of chemical speicies not including M
+      integer nchmcnt			! # of times chemistry has been called
+      INTEGER NEQUI			! Number of species for which equilibireium rates are done
+      INTEGER NREAC			! actual no. of chem reactions
+      INTEGER NSPECI			! No. of chemical species (including M)
+
+      real*8 PDTEK(nhv,MXVRT)		! Contribution to PDTE from the k-th frequency band
+      CHARACTER*66 PHOTRCN(NXSEC)
+      real*8 PROD			! production rate of ions due to gammas & neutrons?
+      real*8 RK(NRCTN)			! Reaction rate coefficient
+      real*8 RMLIM(NRCTN)		! Parameter used in reaction rate coefficients
+      real*8 RWORK(LRW)			! Scratch array in DDRIV
+      real*8 sieadj(MXVRT)		! = SIE - CHMPOTNRG (?)
+      real*8 SIGABS(NMESH,NSP)
+      real*8 sigabs78(78,nsp)
+      real*8 SIGNO2H(13,6)
+      real*8 signo2h78(78,6)
+      real*8 SIGR(NMESH,NSIG)
+      real*8 sigr78(78,nsig) 
+      CHARACTER*6 SYMB(NRCTN)
+
+      real*8 tchmlast(mxvrt)		! Last time chemistry was done for each cell
+      real*8 TCHM			! Time at which chemistry calculations are done for whole grid
+      real*8 TCHM0
+      real*8 TCHMFRC			! fraction of elapsed time between successive chem calculations
+      real*8 TLAST			! The last time that chemistry was done
+      real*8 tklast(mxvrt)		! Cell temperature the last time chemistry was done
+      real*8 TMPSWITCH2
+      real*8 TPMAX(MXNTF)		! used in EQUIRO
+      real*8 XH2O, xn2, xo2		! Mole fractions in ambient atmosphere
+      real*8 YEQ(NSP)			! Equilibrium species concentrations
+      real*8 YEQSV(NSP,MXVRT)		! = YSAVE - YEQUI 
+      real*8 YEQUI(NSP,MXVRT)		! Mesh wide Equilibrium species concentrations
+      real*8 YSAVE(NSP,MXVRT)		! mesh wide chemical species concentrations
+      real*8 wtmol(4)
+
+C ************************** COMMON BLOCKS ***************************** 
+	 
+      COMMON /chem1/ CIJ, GIJ, PDTEK, prod, tklast, RWORK, sieadj, hnu3,   
+     &  tchmlast, tchm, tchm0, TCHMFRC, TLAST, TMPSWITCH2, 
+     &  tpmax, xh2o, echmtot, dsiemin, dsiemax, avgmw, eltfrac, wtmol,
+     &  xn2, xo2
+
+      COMMON /chem2/ ICHEM, ISTARTCHM, nchmcnt, indx3,
+     8  JCELL, MFMAXC, NCHEM, NEQUI, NREAC, NSPECI,
+     &  iairstrt, irmxprev, itmxprev 
+
+      COMMON /INDSP/ INDE, INDWO2M, INDNO2M, INDOM, INDO2M, INDO3M,
+     8   INDW2NOP, INDOHH3OP, INDH3OP, INDWNOP, INDWO2P, INDNP, INDN2P,
+     8   INDN4P, INDNOP, INDOP, INDO2P, INDO4P, INDH, INDH2O, INDH2O2,
+     8   INDNH, INDHNO2, INDHNO3, INDOH, INDHO2, INDN, INDN2D, INDN2,
+     8   INDN2A3, INDN2O, INDN2O5, INDNO, INDNO2, INDNO3, INDO, INDO1D,
+     &   INDO1S, INDO2, INDO2DL, INDO2SG, INDO3, INDM
+
+      COMMON /LC1/ AR, BR, CR, RMLIM, ICAT, ISTOCH, ICRTBL, INDXM
+      COMMON /LC2/ SYMB, EQNSIN, BCDXSEC, EQSYM
+      COMMON /PHOTCOM/ PHOTRCN, iphrj
+      COMMON /SDRCOM/ RK	  
+      COMMON /SXSEC/ SIGR, SIGNO2H, SIGABS
+      COMMON /YSPACE/ YSAVE, YEQUI, YEQSV, YEQ, CHMPOTNRG
+      common /bins78/ sigr78, sigabs78, signo2h78
+
+C ************************** COMMON BLOCKS ***************************** 

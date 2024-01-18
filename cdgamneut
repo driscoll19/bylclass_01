@@ -1,0 +1,55 @@
+c     hard x-rays, gamma rays
+
+      INTEGER NUM_DIST_BINS
+      PARAMETER (NUM_DIST_BINS = 1549)
+
+      INTEGER NUM_E_BINS
+      PARAMETER (NUM_E_BINS = 26)
+
+c     neutrons
+
+      INTEGER NUM_N_BINS
+      PARAMETER (NUM_N_BINS = 21)
+	  
+      INTEGER NUM_R_BINS
+      PARAMETER(NUM_R_BINS = 200)
+	  
+      INTEGER NUM_T_BINS
+      PARAMETER(NUM_T_BINS = 500)
+
+c     hard x-rays, gamma rays
+
+      real*8 DIST_MAX(NUM_E_BINS)
+      real*8 E_BINS(NUM_E_BINS)
+      real*8 E_INTGL(NUM_E_BINS)
+      real*8 E_SUM(NUM_E_BINS, NUM_DIST_BINS)
+      real*8 ENERGY_DEPOSITION(NUM_E_BINS, NUM_DIST_BINS)
+      real*8 HARD_XRAY_GAMMA_YLDS(NUM_E_BINS)
+      integer i_gam_dep
+      INTEGER MAX_BIN(NUM_E_BINS)
+      INTEGER NUM_BINS(NUM_E_BINS)
+
+c     neutrons
+
+      REAL*8 E_NEUTRON(NUM_N_BINS, NUM_T_BINS, NUM_R_BINS)
+      integer i_neut_dep
+      REAL*8 N_INTGL(NUM_N_BINS)		
+      REAL*8 N_SUM(NUM_N_BINS, NUM_R_BINS)  
+      REAL*8 R_0
+      INTEGER R_BIN_MAX(NUM_N_BINS, NUM_T_BINS)
+      REAL*8 R_MULT
+      REAL*8 SOURCE_NEUTRONS(NUM_N_BINS)
+      REAL*8 T_0
+      REAL*8 T_MULT
+
+c     common blocks
+
+      COMMON /ENERGY_DEPOSTION/ E_BINS, NUM_BINS, DIST_MAX, 
+     8   ENERGY_DEPOSITION, HARD_XRAY_GAMMA_YLDS, E_SUM,
+     8   MAX_BIN, E_INTGL, I_GAM_DEP
+
+      COMMON /NEUTRON_DEPOSTION/ R_0, R_MULT, T_0, T_MULT, 
+     &   E_NEUTRON, SOURCE_NEUTRONS, N_SUM, N_INTGL, R_BIN_MAX, 
+     &   I_NEUT_DEP
+
+      

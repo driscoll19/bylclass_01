@@ -1,0 +1,22 @@
+      real*4 tyming(100), tout, tin, tout2, tin2
+      real*4 tall_in, tall_out
+      real*8 ave_icmax, total_ic
+      character*8 lbltime(100)
+      integer*8 ntymes, nproc, chunk, max_icmax
+      character dstart*9, dend*9, tstart*10, tend*10
+      parameter(ntymes=32)
+      common /ctymes/ tyming, tall_in, tall_out, nproc, chunk
+      common /datime/ dstart, dend, tstart, tend
+      common /avestuf/ ave_icmax, total_ic, max_icmax
+
+      data lbltime(1:32)/"COARSE  ","Sn Trns ","RT Sn   ","AMU MP  ",
+     &                   "GD HYDRO","HYDRIEM ","Riemann ","Remove Z",
+     &                   "EOCALC  ","G N Xray","Gamm Dep","Calc Neu",
+     &                   "JZ Trns ","PQNEW   ","DS EOS  ","DBL2NT  ",
+     &                   "DELMU CH","musiband","EQUIRO  ","RATECN  ",
+     &                   "PHOTO   ","DDRIV3  ","AMR     ","PIB Calc",
+     &                   "CHEM POT","FZRO    ","FCHEM   ","JACOBN  ",
+     &                   "DIFFUSE ","REMAP   ","H Cond  ","SIEADJ  "/
+    
+      data lbltime(100)/"FULL RUN"/
+      

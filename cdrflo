@@ -1,0 +1,285 @@
+      implicit none
+
+      integer mxplt, mxvrt, nhv, npowpts, nkt, nxbins, nrho, orho
+      
+      parameter (mxvrt = 50000, npowpts = 5000, mxplt =188)
+      parameter (nhv = 78)		! maximum number of frequency bins
+      parameter (nkt = 100)		! maximum number of temperature bins
+      parameter (nrho = 20)		! number of air density bins for eos tables
+      parameter (orho = 20)		! number of air density bins for opacity tables
+      parameter (nxbins = 5000)		! maximum number of time bins for xray dep, if used
+      
+      character*80 basename		! the directory where various data files reside
+      character hed*80
+
+cemds INTEGERS
+
+      integer add_planck			! Switch to use both Rosseland and Planck opacities     
+      integer iamrcnt				! Number of times AMR has been done
+      integer ib_switch				! Switch for pib calculation	 
+      integer icmax				! Number of cells
+      integer ideb
+      integer idebris
+      integer ideb_eos
+      integer ideb_opac
+      integer idmpwr, idmpstp
+      integer ieos				! switch to pick the EOS
+      integer ihydro				! switch to do hydro or not
+      integer ilenb				! the length of "basename"
+      integer imassdiff				! mass diffusion switch on/off = 1/0
+      integer imax 				! Number of cell faces
+      integer imov_deb				! Switch to allow debris to move during xray deposition
+      integer inputflag
+      integer iodchk				! Optical depth switch
+      integer iorder
+      integer iopac				! opacity switch
+      integer iphoto				! iphoto > 0 implies photoionization is on (0 implies off)
+      integer iraise, ilower			! CHOPPR counters
+      integer iradt				! switch for radiation transport
+      integer irmx
+      integer isharp
+      integer isn
+      integer itbins			! # of xray time bins used, <= nxbins
+      integer itmx
+      integer itmusi
+      integer ixraydep			! Xray deposition switch
+
+      integer jfz, jfzend		! AMR parameter, index of last fine zone
+      integer jr(mxvrt), jt(mxvrt)	! EOS index arrays
+      integer jr_opac(mxvrt)		! Opacity density index array
+
+      integer lastrzn			! The ncycle number at the time of the last rezone
+      integer lcemax			! Index of cell with highest sie
+      integer lcxx1			! Index of zone with smallest radiation timestep
+      integer lcxx1h			! Index of zone with smallest hydro timestep
+      integer lzero
+
+      integer m1, mr, mg, mb, muv1, muv2	! Frequency band indices
+      integer m2p8				! band containing 2.8 microns
+      integer m5p3				! band containing 5.3 microns
+      integer mfmax, mmax			! Number of frequency groups in use
+      integer mfmax_min, mfmaxc_max
+      integer mxcycl
+
+      integer ncycle
+      integer ndc			! Number of debris cells
+      integer npltx			! Index of dmptime check
+      integer npwr, npwrcnt, npwrsave
+      integer nsplit		! AMR parameter, number of zones a zone is split into
+      integer nsn
+      integer nzone2
+
+cemds REALS
+
+      real*8 agam			! number of air ionizations per kT deposited
+      real*8 akappa
+      real*8 alam
+      real*8 alecoef			! Abritray Lagrangian (1) Eulerian (0) coefficient
+      real*8 amu(mxvrt,nhv)		! Linear absorption coefficient
+
+      real*8 b(nkt,nhv)		! pi * B (planck function)
+      real*8 bmbms			! bomb mass in gm
+
+      real*8 cekin			! Initial kinetic to internal energy ratio
+      real*8 cfactor(mxvrt)		! Cell compression factor
+      real*8 cs(mxvrt)			! Sound speed
+
+      real*8 d1, d2, d3, d4		! EOS table constants
+      real*8 d1_opac, d4_opac
+      real*8 debdens			! debris number density
+      real*8 deltaq(nhv)		! band width in angstroms
+      real*8 dmptime(mxplt)
+      real*8 dqintgl(mxvrt)		! d/dt (qintgl)
+      real*8 dr(mxvrt)
+      real*8 drconzn
+      real*8 dtgam
+      real*8 dth			! Hydrodynamic time step
+      real*8 dtgrow			! DT grow value
+      real*8 dtk			! hydro time step factor
+      real*8 dtng			! neutron/gamma time step
+      real*8 dtr			! Radiation time step	
+      real*8 dt  			! Computation time step
+      real*8 dtzone(mxvrt)		! The time step for each zone
+
+      real*8 edensdb(mxvrt)
+      real*8 edensair(mxvrt)
+      real*8 edebris
+      real*8 eint2
+      real*8 endtime    
+      real*8 ergs_per_kt
+      real*8 ekin, esumh, etotal		! energy totals
+      real*8 enneut14
+      real*8 enneutfss
+      real*8 eprod(mxvrt)
+      real*8 etable(nkt)			! implicit eos sie table, for information and plotting
+      real*8 etheta
+      real*8 exdep(nhv)
+      real*8 exflux(nhv)
+      real*8 exsum(nxbins, nhv)
+      real*8 exrate(nxbins, nhv)
+
+      real*8 fa(mxvrt)				! face area
+      real*8 fcng1
+      real*8 ffiss, fgam, fdgam, fneut14, fneutfss
+      real*8 fnegall(mxvrt,nhv),  fposall(mxvrt, nhv)  ! Sn Arrays
+      real*8 fp(nkt,nrho)				! EOS table values for getting PR
+
+      real*8 gam(mxvrt)
+      real*8 gamma_con, gamm1_con, gamma_cv	! for gamma law ideal gas
+      real*8 pgamyld,  dgamyld
+      real*8 pgyldinp, dgyldinp
+      real*8 gt(nkt,nrho)				! EOS table values for getting TEMP
+      real*8 gyldinp
+
+      real*8 hnu(nhv)				! Frequency group mid point in eV
+      real*8 hnur(nhv+1)			! Frequency group edge in eV
+      real*8 hnuerg(nhv)			! hnu in erg
+
+      real*8 kt(nkt)				! Opacity temperature array in eV
+      real*8 kt_ne(nkt)				! Compton table temperatures
+      real*8 lrhotbl(nrho)			! log(rhotbl)
+      real*8 lorhotbl(orho)			! log(orhotbl)
+
+      real*8 mass(mxvrt)
+
+      real*8 ne_fr(nkt,nrho)		! Compton fractional ionization table
+      real*8 ne_tbl(nkt,nrho)		! Compton free electron denisty table
+      real*8 ne(mxvrt)			! cell free electron density
+      real*8 neutyld
+      real*8 nyldinp
+
+      real*8 odval(mxvrt,7)		! optical depth in 7 bands
+      real*8 ominus(mxvrt)
+      real*8 orhotbl(orho)		! density bin table for air opacity
+
+      real*8 pamb				! Ambient air pressure
+      real*8 pdte(mxvrt)
+      real*8 pi, pi4, pi43
+      real*8 pib(mxvrt,nhv)		! pi * B(T,hv)
+      real*8 pib1, pib2			! Quantities used in CHOPPR
+      real*8 pibx(nhv)
+      real*8 pf(mxvrt), p(mxvrt)	! Face pressure, cell center pressure
+      real*8 power(npowpts,42)
+      real*8 pwint(npowpts,42)
+
+      real*8 qbm(nhv)
+      real*8 qpgam(mxvrt), qdgam(mxvrt), qintgl(mxvrt), qneut(mxvrt)
+      real*8 qxray(mxvrt)
+      real*8 qn1, qn2, qn3, qn4
+
+      real*8 r0(mxvrt) 					! Initial debris values
+      real*8 r(mxvrt), rc(mxvrt)		! Cell left face radius, cell center radius
+      real*8 rbomb
+      real*8 radowt(nhv)
+      real*8 radyld
+      real*8 rconbeg, rconxray, rdeb, rfb, rfbmax
+      real*8 rfrc(mxvrt)
+      real*8 rfrc_opac(mxvrt)		! denisty bin weight for opacity tables
+      real*8 rho1			! Debris mass density
+      real*8 rho2			! Ambient air density
+      real*8 rho(mxvrt)			! Mass density
+      real*8 rhoair_min, rhoair_max
+      real*8 rhodeb_min, rhodeb_max
+      real*8 rho_ne(nrho)			! Compton table densities
+      real*8 rhotbl(nrho)			! EOS table densities
+      real*8 rmuone
+      real*8 rmax			! Maximum radius of the grid
+      real*8 rtvar(npowpts,12)
+
+      real*8 sie(mxvrt)			! specific internal energy
+
+      real*8 tamb			! ambient temperature
+      real*8 tair_min, tair_max		! Min and max air temperatures
+      real*8 taux0
+      real*8 tauofx(mxvrt,nhv)
+      real*8 tau1, tau2
+      real*8 tdeb_min, tdeb_max		! Min and max debris temperatures
+      real*8 temp(mxvrt)		! Temperature in K
+      real*8 tfb
+      real*8 time
+      real*8 timeplt(mxplt)
+      real*8 tfrc(mxvrt)
+      real*8 tmpswitch1
+      real*8 tofx(mxvrt)		! Temperature in eV
+      real*8 tpower(npowpts)		! Times when power is actually included
+      real*8 tpwr(npowpts)		! Array of times to save the power and other stuff
+      real*8 tpwint(npowpts)		! array of times for pwint
+      real*8 trezone
+      real*8 twdmp(2)			! Time to start and stop data dumps, if twdmp(1) > 0
+      real*8 txdep(nxbins)		! xray time bins, when using t dep xray deposition
+
+      real*8 uc(mxvrt), uc0(mxvrt)		! Cell center velocity
+      real*8 uf(mxvrt)				! Cell face velocity
+      real*8 uk(nkt,   orho, nhv)		! Rosseland Opacity table values (T, rho, hv)
+      real*8 ukpl(nkt, orho, nhv)		! Planck Opacity table	
+      real*8 ukl(nkt,  orho, nhv)		! natural log of uk()	
+
+      real*8 vdeb0, vneut14, vneutfss
+      real*8 vol(mxvrt)			! Cell volume
+
+      real*8 watts(nhv)
+      real*8 wk(mxvrt,8)		! work array
+      real*8 wtstot
+
+      real*8 xedge			! ~fireball radius at end of x-ray deposition
+      real*8 xflxout
+      real*8 xtemp
+      real*8 xyield, xyldergs
+      real*8 xyld(nhv)			! bomb4 x-ray yield inputs, in kt
+      real*8 xyldout
+
+      real*8 yfb
+      real*8 ygdot
+      real*8 yield
+      real*8 yint
+      real*8 ykin			! Initial kinetic energy yield
+      real*8 yxray
+      real*8 zkm
+      
+      common /radtrns/ uk, ukpl, ukl, b, amu, hnu, hnur, hnuerg, pdte,  
+     &    radowt, watts, power, tpower, rtvar, tpwr, xyldergs, pib1,  
+     &    pib2, xedge, debdens, deltaq, edensdb, edensair, eprod, 
+     &    fnegall, fposall, pib, tauofx, ominus, pwint, ihydro, iraise,  
+     &    ilower, npwr, npwrcnt, iradt, ixraydep, lcxx1, lcemax, lzero
+      
+      common /hydro/ cs, dr, gam, mass, p, r, rc, rho, fa, 
+     &       sie, temp, tofx, uc, uf, vol, rfrc, tfrc, cfactor,
+     &       pf, wk, pamb, r0, uc0, dtzone, jr, jt
+     
+      common /inputs/ akappa, alam, bmbms, cekin, drconzn, dtk, dtgam, 
+     &  endtime, ffiss, fgam, fdgam, fneut14, fneutfss, rho1,rho2, rmax,   
+     &  taux0, yield, zkm, twdmp, pgyldinp, dgyldinp, nyldinp, enneut14,
+     &  enneutfss, etheta, agam, alecoef, idmpwr, inputflag, idmpstp, 
+     &  isn, ib_switch, ilenb, imov_deb, hed, basename 
+      
+      common /outputs/ dmptime, qbm, qpgam, qdgam, qintgl, qneut, qxray,
+     &  qn1, qn2, qn3, qn4, vdeb0, vneutfss, vneut14, yfb, 
+     &  ygdot, yint, yxray, xtemp, xyield, rconbeg, rconxray, rdeb,
+     &  rfb, rfbmax, rmuone, tamb, tau1, tau2, tfb, timeplt,
+     &  tmpswitch1, tpwint, tair_min, tair_max, tdeb_min, tdeb_max,
+     &  rhoair_min, rhoair_max, rhodeb_min, rhodeb_max, dqintgl
+      
+      common /scalars/ dt, dtgrow, dth, dtng, dtr, ergs_per_kt, etotal,  
+     &        fcng1, pi, pi4, pi43, radyld, time, dgamyld, pgamyld,   
+     &        wtstot, xflxout, xyldout, ykin, trezone, neutyld,  
+     &        edebris, rbomb, eint2, ekin, esumh, add_planck,
+     &        mfmax_min, mfmaxc_max, npwrsave, iphoto
+     
+      common /eostbl/ fp, gt, rhotbl, kt, etable, d1, d2, d3, d4
+      common /eosgam/ gamma_con, gamm1_con, gamma_cv
+      
+      common /ints/ icmax, imax, irmx, itmx, lcxx1h, mfmax, 
+     &    ncycle, ndc, m1, mr, mg, mb, muv1, muv2, mxcycl, ideb,
+     &    iorder, lastrzn, iopac, ieos, idebris, ideb_eos, ideb_opac,
+     &    itmusi, mmax, nsn, nzone2, npltx, isharp, iodchk, itbins,
+     &    m2p8, m5p3
+	 
+      common /amr01/ odval, iamrcnt, jfzend, jfz, nsplit
+      common /compton/ ne, ne_tbl, ne_fr, rho_ne, kt_ne
+      common /setbomb4/ xyld, pibx
+      common /setbomb5/ exrate, txdep, exsum, exdep, exflux
+      common /stuff78/ d1_opac, d4_opac, jr_opac, rfrc_opac, orhotbl,
+     &                 lrhotbl, lorhotbl
+     
+     
+     
