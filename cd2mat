@@ -1,0 +1,35 @@
+c     the frequency array for the second material is
+c     currently equal to the air frequency array, i.e.
+c     hnur_deb = hnur (for the air)
+c     density and temperature arrays are different
+
+      integer nhv_deb
+      integer nkt_deb
+      integer nrho_deb
+
+      integer nrho_eos
+      integer nie_eos
+
+      parameter(nkt_deb=78,  nrho_deb=30, nhv_deb=78)
+      parameter(nie_eos=100, nrho_eos=20)
+
+c     Opacity arrays
+
+      real*8 hnur_deb(nhv_deb+1)
+      real*8 kt_deb(nkt_deb)				! debris T in eV
+      real*8 ne_deb(nkt_deb, nrho_deb)
+      real*8 rho_deb(nrho_deb)
+      real*8 uk_deb(nkt_deb, nrho_deb, nhv_deb)		! Rosseland
+      real*8 uk_debpl(nkt_deb, nrho_deb, nhv_deb)	! Planck
+      real*8 bdeb(nkt_deb, nhv_deb)
+
+c     EOS arrays
+
+      real*8 rho_tabl2(nrho_eos)		! density   table for debris 
+      real*8 sie_tabl2(nie_eos)			! sie       table for debris 
+      real*8 fp2(nie_eos,nrho_eos)		! gamma - 1 table for debris 
+      real*8 gt2(nie_eos,nrho_eos)		! T/sie     table for debris 
+      real*8 ss2(nie_eos,nrho_eos)		! sound speed     for debris 
+
+      common /mat2stuf/ uk_deb, kt_deb, rho_deb, hnur_deb, ne_deb, 
+     &                  uk_debpl, bdeb, rho_tabl2, sie_tabl2, fp2, gt2
